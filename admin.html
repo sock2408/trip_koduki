@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список участников</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #participantList {
+      list-style: none;
+      padding: 0;
+    }
+    #participantList li {
+      background: #f8faff;
+      margin: 8px 0;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid #dde7f0;
+    }
+    .hidden {
+      display: none;
+    }
+    #passwordSection {
+      margin: 20px 0;
+    }
+    #passwordInput {
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>👥 Участники поездки</h1>
+    
+    <div id="passwordSection">
+      <p>Введите пароль для просмотра:</p>
+      <input type="password" id="passwordInput" placeholder="Пароль">
+      <button id="unlockBtn">Показать</button>
+      <div id="passMessage" style="color:red; margin-top:8px;"></div>
+    </div>
+
+    <div id="listSection" class="hidden">
+      <ul id="participantList"></ul>
+      <p><strong>Всего:</strong> <span id="count">0</span> человек</p>
+      <button id="refreshBtn">Обновить список</button>
+      <br><br>
+      <a href="index.html">⬅ Вернуться на главную</a>
+    </div>
+  </div>
+
+  <script>
+    // Пароль (вы можете изменить на свой)
+    const ADMIN_PASSWORD = "konduki2026";
+
+    document.getElementById('unlockBtn').addEventListener('click', function() {
+      const pass = document.getElementById('passwordInput').value;
+      const msg = document.getElementById('passMessage');
+      if (pass === ADMIN_PASSWORD) {
+        document.getElementById('passwordSection').classList.add('hidden');
+        document.getElementById('listSection').classList.remove('hidden');
+        loadParticipants();
+      } else {
+        msg.textContent = 'Неверный пароль!';
+      }
+    });
+
+    // Загрузка данных из Supabase
+    async function loadParticipants() {
+      const SUPABASE_URL = 'ВАШ_SUPABASE_URL';      // замените
+      const SUPABASE_KEY = 'ВАШ_SUPABASE_ANON_KEY'; // замените
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/participants?select=*&order=created_at.asc`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        if (!response.ok) throw new Error('Ошибка загрузки');
+        const data = await response.json();
+        const list = document.getElementById('participantList');
+        list.innerHTML = '';
+        data.forEach(p => {
+          const li = document.createElement('li');
+          const date = new Date(p.created_at).toLocaleString('ru');
+          li.textContent = `${p.name} — ${date}`;
+          list.appendChild(li);
+        });
+        document.getElementById('count').textContent = data.length;
+      } catch (e) {
+        document.getElementById('participantList').innerHTML = '<li>Не удалось загрузить список. Проверьте интернет и настройки.</li>';
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadParticipants);
+  </script>
+</body>
+</html>
